@@ -37,7 +37,7 @@ from typing import Optional
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
-from core.config import get_output_dir
+from core.config import get_swap_dir
 
 logger = logging.getLogger(__name__)
 
@@ -620,7 +620,7 @@ def get_builtin_tools(output_dir: str | None = None, project_dir: str | None = N
         output_dir:  产出物目录路径。None 时从环境变量读取。
         project_dir: 项目根目录路径。None 时使用当前工作目录。
     """
-    resolved_output = output_dir or get_output_dir()
+    resolved_output = output_dir or get_swap_dir()
     resolved_project = project_dir or str(Path.cwd())
     tools = [
         _make_get_env_context_tool(resolved_output, resolved_project),

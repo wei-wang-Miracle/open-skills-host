@@ -1,10 +1,10 @@
-"""运行时路径配置 — 从环境变量解析 skills 目录和产出物目录
+"""运行时路径配置 — 从环境变量解析 skills 目录和交换空间目录
 
 支持绝对路径和相对路径（相对于项目根目录）。
 
 环境变量:
-    SKILLS_DIR        技能目录（默认 ./skills）
-    SKILLS_OUTPUT_DIR 产出物输出目录（默认 ./outputs）
+    SKILLS_DIR    技能目录（默认 ./skills）
+    SKILLS_SWAP_DIR 交换空间目录（默认 ./swap）
 """
 
 from __future__ import annotations
@@ -34,6 +34,6 @@ def get_skills_dir() -> str:
     return _resolve("SKILLS_DIR", "./skills")
 
 
-def get_output_dir() -> str:
-    """返回产出物目录的绝对路径（来自 SKILLS_OUTPUT_DIR 环境变量，默认 ./outputs）。"""
-    return _resolve("SKILLS_OUTPUT_DIR", "./outputs")
+def get_swap_dir() -> str:
+    """返回交换空间目录的绝对路径（来自 SKILLS_SWAP_DIR 环境变量，默认 ./swap）。"""
+    return _resolve("SKILLS_SWAP_DIR", "./swap")

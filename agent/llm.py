@@ -16,8 +16,7 @@ import logging
 from dotenv import load_dotenv
 
 # 使用 LangChain 最新的 init_chat_model 进行统一的大模型初始化
-from langchain.chat_models import init_chat_model
-from langchain_core.language_models import BaseChatModel
+from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def get_chat_model() -> BaseChatModel:
+def get_chat_model() -> ChatOpenAI:
     """创建并返回配置好的 ChatOpenAI 实例
 
     功能:
@@ -60,9 +59,8 @@ def get_chat_model() -> BaseChatModel:
 
     # 使用 init_chat_model 进行统一的初始化
     # init_chat_model 提供了一种优雅的基于 provider 的实例化方式
-    return init_chat_model(
+    return ChatOpenAI(
         model=model_name,
-        model_provider="openai",  # Moonshot 兼容 openai 协议
         api_key=api_key,
         base_url=base_url,
         temperature=temperature,

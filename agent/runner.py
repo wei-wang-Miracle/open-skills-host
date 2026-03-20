@@ -19,8 +19,8 @@ from typing import Literal
 from pydantic import BaseModel
 from langchain.agents import create_agent
 
-from core.config import get_skills_dir, get_output_dir
-from core.discovery import discover_skills
+from core.config import get_skills_dir, get_swap_dir
+from core.discovery import discover_skills, scan_skill_scripts
 from core.errors import SkillNotFoundError
 from core.parser import load_instructions
 from agent.llm import get_chat_model
@@ -72,7 +72,7 @@ def run_skill(
     """
     logger.info("开始执行技能: name=%s", skill_name)
     resolved_dir = skills_dir or get_skills_dir()
-    resolved_output = output_dir or get_output_dir()
+    resolved_swap = output_dir or get_swap_dir()
     print(f"[1/3] 发现阶段  扫描技能目录: {resolved_dir}")
     skills = discover_skills(resolved_dir)
     target_skill = next((s for s in skills if s.name == skill_name), None)
@@ -85,7 +85,7 @@ def run_skill(
     print(f"[2/3] 工具构建  加载基础能力工具")
     llm = get_chat_model()
 
-    all_tools = get_builtin_tools(output_dir=resolved_output, project_dir=resolved_dir)
+    all_tools = get_builtin_tools(output_dir=resolved_swap, project_dir=resolved_dir)
 
     tool_names = [t.name for t in all_tools]
     print(f"         注册工具: {tool_names}")
@@ -94,6 +94,16 @@ def run_skill(
     print(f"[3/3] 执行阶段  启动 Agent")
     instructions = load_instructions(target_skill.path)
     skill_desc = f"{target_skill.description}\n\n## 技能指令\n{instructions}"
+
+    # 扫描技能目录下所有可执行脚本
+    skill_scripts = scan_skill_scripts(target_skill.skill_dir)
+    if skill_scripts:
+        scripts_lines = "\n".join(
+            f"    - {s['rel_path']}  →  {s['path']}" for s in skill_scripts
+        )
+        scripts_hint = f"\n\n    ## 技能脚本清单\n    当前技能包含以下可执行脚本（可通过 shell 工具直接调用绝对路径）:\n{scripts_lines}"
+    else:
+        scripts_hint = ""
 
     # 若有输入文件目录，将其告知 Agent（可通过 shell 或 read_file 工具直接访问）
     input_dir_hint = (
@@ -108,6 +118,34 @@ def run_skill(
     当前激活的技能描述是 '{target_skill.description}'
     当前激活的使用说明文档是 '{skill_desc}'
     当前激活的可用工具是 '{tool_names}'{input_dir_hint}
+    当前技能本身存在的脚本是 '{scripts_hint}'，你可以使用shell调用他们
+
+    ## 产出物质量标准（必须遵守）
+
+    ### 通用质量要求
+    1. 【专业级别】产出物应达到专业从业者标准，不能只完成最低要求或敷衍了事
+    2. 【业务相关性】深入理解用户的业务意图，产出物应直接解决用户的实际问题
+    3. 【完整性】确保产出物包含所有必要的组成部分，不遗漏关键内容
+    4. 【可用性】产出物应立即可用，无需用户二次加工或修复
+    5. 【最终性】产出物应遵循最终性，即不需要关注中间过程，只产出最终产物
+
+    ### 格式与结构要求
+    1. 【层次分明】产出物应有清晰的结构层次（如：总览→详情→原始数据）
+    2. 【格式规范】遵循行业通用格式标准，保持专业外观
+    3. 【可读性】使用适当的排版、标题、分隔，便于阅读和理解
+    4. 【元信息】包含必要的元信息（如：生成时间、数据来源、统计口径说明）
+
+    ### 数据分析类产出物（Excel/报告）特别要求
+    1. 【多维度分析】不能只做表面统计，必须从多个业务维度深入分析
+    2. 【多工作表结构】Excel报告应包含多个工作表而非单一数据堆砌
+    3. 【可视化增强】优先通过在Excel报告插入图表和条件格式提升信息传达效率
+    4. 【数据质量】检查并报告数据质量问题（空值、异常值、重复等）
+
+    ### 代码/文档类产出物特别要求
+    1. 【结构清晰】代码有合理的模块划分，文档有清晰的章节结构
+    2. 【注释/说明】关键逻辑有必要的注释或说明
+    3. 【可维护性】产出物易于后续修改和扩展
+
     ## 执行铁律（不得违反）
     1. 【禁止幻觉】未调用工具并收到成功返回前，绝对不能声称任务已完成或描述任何执行结果。
     2. 【工具优先】所有实质性操作（创建文件、执行脚本、修改内容）必须通过调用工具完成，不能以文字描述代替。

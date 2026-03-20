@@ -26,7 +26,7 @@ from api.schemas import (
     SkillListResponse,
     SkillSummary,
 )
-from core.config import get_output_dir, get_skills_dir
+from core.config import get_swap_dir, get_skills_dir
 from core.discovery import discover_skills
 from core.errors import SkillNotFoundError
 from core.parser import load_instructions
@@ -78,7 +78,7 @@ async def invoke_skill(body: InvokeRequest) -> InvokeResponse:
     """
     name = body.skill_name
     execution_id = str(uuid.uuid4())
-    base_tmp = Path(get_output_dir()) / execution_id
+    base_tmp = Path(get_swap_dir()) / execution_id
     exec_input_dir = base_tmp / "inputs"
     exec_output_dir = base_tmp / "outputs"
     exec_input_dir.mkdir(parents=True, exist_ok=True)

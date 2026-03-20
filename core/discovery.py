@@ -42,6 +42,55 @@ def is_safe_path(path: Path, base_dir: Path) -> bool:
         return False
 
 
+def scan_skill_scripts(skill_dir: str | Path) -> List[dict]:
+    """扫描技能目录下的所有可执行脚本文件（.py、.sh）
+
+    递归扫描指定技能目录，返回所有 Python 和 Shell 脚本的元信息列表。
+
+    参数:
+        skill_dir: 技能目录路径
+
+    返回:
+        脚本信息字典列表，每项包含:
+            - name:      文件名（不含路径）
+            - path:      绝对路径
+            - rel_path:  相对于技能目录的相对路径
+            - ext:       文件扩展名（.py 或 .sh）
+
+    示例:
+        >>> scripts = scan_skill_scripts("./skills/web-research")
+        >>> for s in scripts:
+        ...     print(f"{s['rel_path']}  →  {s['path']}")
+    """
+    skill_dir = Path(skill_dir).expanduser().resolve()
+
+    if not skill_dir.exists() or not skill_dir.is_dir():
+        logger.warning(f"技能目录不存在或不是目录: {skill_dir}")
+        return []
+
+    scripts: List[dict] = []
+    for file_path in sorted(skill_dir.rglob("*")):
+        if file_path.suffix not in (".py", ".sh"):
+            continue
+        if not file_path.is_file():
+            continue
+        # 安全验证: 防止符号链接逃逸
+        if not is_safe_path(file_path, skill_dir):
+            logger.warning(f"跳过不安全的脚本路径: {file_path}")
+            continue
+        scripts.append(
+            {
+                "name": file_path.name,
+                "path": str(file_path.absolute()),
+                "rel_path": str(file_path.relative_to(skill_dir)),
+                "ext": file_path.suffix,
+            }
+        )
+
+    logger.debug(f"在 {skill_dir} 中扫描到 {len(scripts)} 个脚本")
+    return scripts
+
+
 def discover_skills(skills_dir: str | Path) -> List[SkillProperties]:
     """发现目录中的所有技能
 
